@@ -54,8 +54,8 @@ public class RtfToHtml implements HttpFunction {
                 ? request.getHeaders().get("referer").getFirst()
                 : null;
 
-        boolean isValidOrigin = (origin != null && origin.equals("https://scroogexhtml.com")) ||
-                (referer != null && referer.startsWith("https://scroogexhtml.com"));
+        boolean isValidOrigin = (origin != null && origin.equals("https://www.scroogexhtml.com")) ||
+                (referer != null && referer.startsWith("https://www.scroogexhtml.com"));
 
         if (!isValidOrigin) {
             response.setStatusCode(403, "Forbidden: Invalid origin");
@@ -111,7 +111,7 @@ public class RtfToHtml implements HttpFunction {
         // Return HTML content
         response.setStatusCode(200);
         response.appendHeader("Content-Type", "text/html; charset=utf-8");
-        response.appendHeader("Access-Control-Allow-Origin", "https://scroogexhtml.com"); // if needed
+        response.appendHeader("Access-Control-Allow-Origin", "https://www.scroogexhtml.com"); // if needed
         try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
             writer.write(htmlContent);
         }
