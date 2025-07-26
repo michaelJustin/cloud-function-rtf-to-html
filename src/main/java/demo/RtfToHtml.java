@@ -27,7 +27,7 @@ public class RtfToHtml implements HttpFunction {
 
     /**
      * Handles HTTP requests to convert an RTF document to HTML.
-     * Only requests coming from https://converterxhtml.com are accepted.
+     * Only requests coming from https://scroogexhtml.com are accepted.
      * This is intentional to limit the usage to code hosted on the ScroogeXHTML
      * website.
      *
@@ -45,7 +45,7 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
 
-        // Only accept requests from converterxhtml.com
+        // Only accept requests from scroogexhtml.com
         String origin = request.getHeaders().get("origin") != null
                 ? request.getHeaders().get("origin").getFirst()
                 : null;
@@ -54,8 +54,8 @@ public class RtfToHtml implements HttpFunction {
                 ? request.getHeaders().get("referer").getFirst()
                 : null;
 
-        boolean isValidOrigin = (origin != null && origin.equals("https://converterxhtml.com")) ||
-                (referer != null && referer.startsWith("https://converterxhtml.com"));
+        boolean isValidOrigin = (origin != null && origin.equals("https://scroogexhtml.com")) ||
+                (referer != null && referer.startsWith("https://scroogexhtml.com"));
 
         if (!isValidOrigin) {
             response.setStatusCode(403, "Forbidden: Invalid origin");
@@ -98,10 +98,10 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
 
-        final int MAX_SIZE_BYTES = 16 * 1024; // 16 KB
+        final int MAX_SIZE_BYTES = 64 * 1024; // 64 KB
         
         if (rtfContent.length() > MAX_SIZE_BYTES) {
-            response.setStatusCode(413, "File too large (max 16 KB)");
+            response.setStatusCode(413, "File too large (max 64 KB)");
             return;
         }
 
@@ -111,7 +111,7 @@ public class RtfToHtml implements HttpFunction {
         // Return HTML content
         response.setStatusCode(200);
         response.appendHeader("Content-Type", "text/html; charset=utf-8");
-        response.appendHeader("Access-Control-Allow-Origin", "*"); // if needed
+        response.appendHeader("Access-Control-Allow-Origin", "https://scroogexhtml.com"); // if needed
         try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
             writer.write(htmlContent);
         }
