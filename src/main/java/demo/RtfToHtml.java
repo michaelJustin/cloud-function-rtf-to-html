@@ -4,6 +4,7 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.scroogexhtml.ScroogeXHTML;
+import com.scroogexhtml.css.LengthUnit;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMultipart;
@@ -26,7 +27,7 @@ public class RtfToHtml implements HttpFunction {
 
     /**
      * Handles HTTP requests to convert an RTF document to HTML.
-     * Only requests coming from https://scroogexhtml.com are accepted.
+     * Only requests coming from https://converterxhtml.com are accepted.
      * This is intentional to limit the usage to code hosted on the ScroogeXHTML
      * website.
      *
@@ -44,7 +45,7 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
 
-        // Only accept requests from scroogexhtml.com
+        // Only accept requests from converterxhtml.com
         String origin = request.getHeaders().get("origin") != null
                 ? request.getHeaders().get("origin").getFirst()
                 : null;
@@ -53,8 +54,8 @@ public class RtfToHtml implements HttpFunction {
                 ? request.getHeaders().get("referer").getFirst()
                 : null;
 
-        boolean isValidOrigin = (origin != null && origin.equals("https://scroogexhtml.com")) ||
-                (referer != null && referer.startsWith("https://scroogexhtml.com"));
+        boolean isValidOrigin = (origin != null && origin.equals("https://converterxhtml.com")) ||
+                (referer != null && referer.startsWith("https://converterxhtml.com"));
 
         if (!isValidOrigin) {
             response.setStatusCode(403, "Forbidden: Invalid origin");
@@ -123,8 +124,31 @@ public class RtfToHtml implements HttpFunction {
             }""";
      
         ScroogeXHTML converter = new ScroogeXHTML();
+
         converter.setAddOuterHTML(true);
+
+        // Head options
+        converter.getHtmlHeadConfig().setMetaAuthor("https://www.scroogexhtml.com/");
         converter.getHtmlHeadConfig().setStyleSheetInclude(DEFAULT_CSS);
+        converter.getHtmlHeadConfig().setIncludeDefaultFontStyle(true);
+        converter.setDefaultLanguage("en");
+
+        // Font (character) Formatting Properties
+        converter.getCharPropConvConfig().setConvertLanguage(true);
+        converter.getCharPropConvConfig().setFontSizeUnit(LengthUnit.POINT); // default is em
+
+        // Paragraphs
+        converter.getParaPropConvConfig().setConvertIndent(true);
+        converter.getParaPropConvConfig().setConvertParagraphBorders(true);
+
+        // Special options
+        converter.setConvertBookmarks(true);
+        converter.setConvertEmptyParagraphs(true);
+        converter.setConvertFootnotes(true);
+        converter.setConvertHyperlinks(true);
+        converter.setConvertPictures(true);
+        converter.setConvertTables(true);
+        
         return converter.convert(rtfContent);
     }
 }

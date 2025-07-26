@@ -38,12 +38,7 @@
             <version>2.18.0</version>
         </dependency>
         
-        <!-- JavaMail multipart parser (for reading form data) -->
-        <!-- dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>1.6.2</version>
-        </dependency -->
+        <!-- Jakarta Mail multipart parser (for reading form data) -->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
