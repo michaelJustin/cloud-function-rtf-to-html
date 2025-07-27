@@ -38,6 +38,7 @@ mvn function:run
 Output:
 
 ```console
+...
 [INFO] jetty-9.4.51.v20230217; built: 2023-02-17T08:19:37.309Z; git: b45c405e4544384de066f814ed42ae3dceacdd49; jvm 21.0.7+6-LTS
 [INFO] Started o.e.j.s.ServletContextHandler@3caa4d85{/,null,AVAILABLE}
 [INFO] Started ServerConnector@c0013b8{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
@@ -56,6 +57,14 @@ Note: in case ScroogeXHTML is not installed, you still may use the demo. Just re
 
 # Installation
 
+The following tools are required:
+
+1. Google Cloud CLI   
+2. JDK 21
+3. Maven
+4. ScroogeXHTML 11.x
+   * in case ScroogeXHTML is not installed, you still may use the demo. Just replace the conversion by a hard-coded result.
+
 # Usage
 
 The cloud function is used in the demo currently located at https://www.scroogexhtml.com/index.html
@@ -65,6 +74,14 @@ The cloud function is used in the demo currently located at https://www.scroogex
 The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L128-L150).
 
 # Deployment
+
+To deploy the Google Cloud function, build the project using 
+
+```console
+mvn clean package
+```
+
+and then lauch the deploy script file.
 
 # Limitations
 
