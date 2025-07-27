@@ -15,6 +15,9 @@ The converter uses a fixed configuration. See the `convertRtfToHtml` method in [
 # Restrictions
 
 - the maximum allowed RTF size is 64 BB.
-- only HTTP requests from https//www.scroogexhtml.com are accepted. 
+- only HTTP requests from https://www.scroogexhtml.com are accepted. 
 
+# Further Reading
+
+- https://blog.habarisoft.com/scroogexhtml/rtf-to-html-in-the-cloud-deploying-a-java-conversion-api-on-google-cloud-run/
 
