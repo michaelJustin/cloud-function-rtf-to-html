@@ -6,7 +6,7 @@ The function reads the RTF file from the HTTP POST payload, converts it, and res
 
 # Usage
 
-The cloud function is used in the demo currently located at https//www.scroogexhtml.com/index.hteml
+The cloud function is used in the demo currently located at https://www.scroogexhtml.com/index.hteml
 
 # Configuration
 
