@@ -1,3 +1,9 @@
+![Java](https://img.shields.io/badge/language-Java-blue.svg)
+![Google Cloud](https://img.shields.io/badge/platform-Google%20Cloud-yellow.svg)
+![License](https://img.shields.io/github/license/michaelJustin/cloud-function-rtf-to-html.svg)
+![Last Commit](https://img.shields.io/github/last-commit/michaelJustin/cloud-function-rtf-to-html.svg)
+![Open Issues](https://img.shields.io/github/issues/michaelJustin/cloud-function-rtf-to-html.svg)
+
 # RTF to HTML Converter Online 
 
 The Java class RtfToHtml implements a Google Cloud Function (HttpFunction) that converts an RTF document to HTML using the [ScroogeXHTML RTF Converter](https://www.scroogexhtml.com/) library.
