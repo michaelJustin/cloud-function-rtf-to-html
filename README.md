@@ -10,7 +10,7 @@ The cloud function is used in the demo currently located at https://www.scroogex
 
 # Configuration
 
-The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java).
+The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L128-L150).
 
 # Restrictions
 
