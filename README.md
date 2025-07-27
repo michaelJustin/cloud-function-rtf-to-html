@@ -6,26 +6,27 @@
 
 ## Table of Contents
 
-- [About](#about)
+- [About Cloud-based RTF to HTML Conversion](#about-cloud-based-rtf-to-html-conversion)
 - [Features](#features)
 - [Quickstart](#quickstart)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Configuration](#configuration)
-- [Deployment](#deployment)
+- [Configuration of the RTF to HTML Conversion](#configuration-of-the-rtf-to-html-conversion)
+- [Deployment of the Google Cloud Function](#deployment-of-the-google-cloud-function)
 - [Limitations](#limitations)
   
-# About
+# About Cloud-based RTF to HTML Conversion
 
-The Java class RtfToHtml implements a Google Cloud Function (HttpFunction) that converts an RTF document to HTML using the [ScroogeXHTML RTF Converter](https://www.scroogexhtml.com/) library.
+The Java class RtfToHtml implements a Google Cloud Function (HttpFunction) that performs a RTF to HTML conversion using the [ScroogeXHTML RTF Converter](https://www.scroogexhtml.com/) library.
 
 The function reads the RTF file from the HTTP POST payload, converts it, and responds with the HTML or an error message.
 
 # Features
 
-Complete Source Code and Maven project.
-Deployment script included.
-Demo HTML page included.
+* Complete Source Code and Maven project.
+* Deployment script included.
+* Demo HTML page included.
+* Serverless document conversion.
 
 # Quickstart
 
@@ -69,11 +70,11 @@ The following tools are required:
 
 The cloud function is used in the demo currently located at https://www.scroogexhtml.com/index.html
 
-# Configuration
+# Configuration of the RTF to HTML Conversion
 
 The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L128-L150).
 
-# Deployment
+# Deployment of the Google Cloud Function
 
 To deploy the Google Cloud function, build the project using 
 
@@ -92,3 +93,11 @@ and then lauch the deploy script file.
 
 - https://blog.habarisoft.com/scroogexhtml/rtf-to-html-in-the-cloud-deploying-a-java-conversion-api-on-google-cloud-run/
 
+# Keywords
+- RTF to HTML conversion
+- Google Cloud Function
+- Java RTF Converter
+- ScroogeXHTML
+- Serverless document conversion
+- Cloud-based RTF to HTML
+  
