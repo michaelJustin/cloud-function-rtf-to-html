@@ -35,7 +35,7 @@
       formData.append('file', file);
 
       try {
-        const response = await fetch('http://localhost:8080/', {
+        const response = await fetch('https://europe-west10-scroogexhtml-11.cloudfunctions.net/rtf-to-html-demo-11/', {
           method: 'POST',
           body: formData
         });
