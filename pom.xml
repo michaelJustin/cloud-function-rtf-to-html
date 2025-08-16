@@ -30,6 +30,11 @@
             <version>11.1.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.scroogexhtml</groupId>
+            <artifactId>ScroogeXHTML-Pictures</artifactId>
+            <version>11.1.0</version>
+        </dependency>
 
         <!-- Apache Commons IO for file handling -->
         <dependency>

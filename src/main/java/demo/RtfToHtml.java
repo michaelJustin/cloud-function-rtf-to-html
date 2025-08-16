@@ -5,16 +5,17 @@ import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.scroogexhtml.ScroogeXHTML;
 import com.scroogexhtml.css.LengthUnit;
+import com.scroogexhtml.events.PostProcessEventObject;
+import com.scroogexhtml.events.PostProcessListener;
+import com.scroogexhtml.pictures.MemoryPictureAdapterDataURI;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
 import org.apache.commons.io.IOUtils;
+import org.w3c.dom.Document;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -25,6 +26,20 @@ import java.nio.charset.StandardCharsets;
  */
 public class RtfToHtml implements HttpFunction {
 
+    private static final int MAX_SIZE_BYTES = 1024 * 1024; // 1024 KB
+    private static final String DEFAULT_CSS = """
+            body,p {
+              margin: 0;
+            }
+            td {
+              vertical-align: top;
+              border: 1px solid #D3D3D3;
+            }
+            table {
+              border-collapse: collapse;
+            }
+            """;
+    
     /**
      * Handles HTTP requests to convert an RTF document to HTML.
      * Only requests coming from https://scroogexhtml.com are accepted.
@@ -78,16 +93,18 @@ public class RtfToHtml implements HttpFunction {
 
         // Parse multipart content
         byte[] bodyBytes = IOUtils.toByteArray(request.getInputStream());
-        ByteArrayDataSource ds = new ByteArrayDataSource(bodyBytes, contentTypeHeader);
-        MimeMultipart mimeMultipart = new MimeMultipart(ds);
+        ByteArrayDataSource dataSource = new ByteArrayDataSource(bodyBytes, contentTypeHeader);
+        MimeMultipart mimeMultipart = new MimeMultipart(dataSource);
 
-        String rtfContent = null;
+        byte[] rtfContent = null;
+        String fileName = null;
 
         for (int i = 0; i < mimeMultipart.getCount(); i++) {
             MimeBodyPart part = (MimeBodyPart) mimeMultipart.getBodyPart(i);
             if (part.getFileName() != null && part.getFileName().endsWith(".rtf")) {
                 try (InputStream is = part.getInputStream()) {
-                    rtfContent = IOUtils.toString(is, StandardCharsets.UTF_8);
+                    rtfContent = IOUtils.toByteArray(is);
+                    fileName = part.getFileName();
                     break;
                 }
             }
@@ -97,41 +114,37 @@ public class RtfToHtml implements HttpFunction {
             response.setStatusCode(400, "RTF file not found in request");
             return;
         }
-
-        final int MAX_SIZE_BYTES = 64 * 1024; // 64 KB
         
-        if (rtfContent.length() > MAX_SIZE_BYTES) {
-            response.setStatusCode(413, "File too large (max 64 KB)");
+        if (rtfContent.length > MAX_SIZE_BYTES) {
+            response.setStatusCode(413, "File too large (max 1024 KB)");
             return;
         }
 
         // ✅ RTF to HTML conversion
-        String htmlContent = convertRtfToHtml(rtfContent);
+        String htmlContent = convertRtfToHtml(rtfContent, fileName);
 
         // Return HTML content
         response.setStatusCode(200);
         response.appendHeader("Content-Type", "text/html; charset=utf-8");
-        response.appendHeader("Access-Control-Allow-Origin", "https://www.scroogexhtml.com"); // if needed
+        response.appendHeader("Access-Control-Allow-Origin", "https://www.scroogexhtml.com"); 
+//        response.appendHeader("Access-Control-Allow-Origin", "*"); // Allow all origins for testing purposes
         try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
             writer.write(htmlContent);
         }
     }
 
-    private String convertRtfToHtml(String rtfContent) {
-        final String DEFAULT_CSS = """
-            body,p {
-              margin: 0;
-            }""";
+    private String convertRtfToHtml(byte[] rtfContent, String filename) {
      
         ScroogeXHTML converter = new ScroogeXHTML();
 
         converter.setAddOuterHTML(true);
 
         // Head options
-        converter.getHtmlHeadConfig().setMetaAuthor("https://www.scroogexhtml.com/");
+        converter.getHtmlHeadConfig().setMetaAuthor("ScroogeXHTML RTF Converter - https://www.scroogexhtml.com");
+        converter.getHtmlHeadConfig().setMetaDescription("Conversion of '%s'".formatted(filename));
         converter.getHtmlHeadConfig().setStyleSheetInclude(DEFAULT_CSS);
         converter.getHtmlHeadConfig().setIncludeDefaultFontStyle(true);
-        converter.setDefaultLanguage("en");
+        converter.setDefaultLanguage("");
 
         // Font (character) Formatting Properties
         converter.getCharPropConvConfig().setConvertLanguage(true);
@@ -149,6 +162,35 @@ public class RtfToHtml implements HttpFunction {
         converter.setConvertPictures(true);
         converter.setConvertTables(true);
         
-        return converter.convert(rtfContent);
+        // pictures
+        converter.setConvertPictures(true);
+        MemoryPictureAdapterDataURI pa = new MemoryPictureAdapterDataURI(256);
+        converter.setPictureAdapter(pa);
+        
+        // footer
+        converter.addPostProcessListener(new MyPostProcessListener(filename, rtfContent.length));
+        
+        return converter.convert(new ByteArrayInputStream(rtfContent));
+    }
+
+    private static class MyPostProcessListener implements PostProcessListener {
+        private final String filename;
+        private final int length;
+
+        public MyPostProcessListener(String filename, int length) {
+            this.filename = filename;
+            this.length = length;
+        }
+
+        @Override
+        public void postProcess(PostProcessEventObject eventObject) {
+            Document doc = eventObject.getDocument();
+            // Add a footer with the filename
+            doc.getElementsByTagName("body").item(0).appendChild(
+                    doc.createElement("footer")
+            ).setTextContent(
+                    "Converted from: %s (size: %d KB) - Powered by ScroogeXHTML - https://www.scroogexhtml.com"
+                            .formatted(filename, length / 1024));
+        }
     }
 }
