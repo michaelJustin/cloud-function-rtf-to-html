@@ -1,4 +1,6 @@
-call gcloud functions deploy rtf-to-html-demo --gen2 --entry-point=demo.RtfToHtml --runtime=java21 --region=europe-west10 --source=./target --trigger-http --allow-unauthenticated
+del /q /s target\original*
+
+call gcloud functions deploy rtf-to-html-demo-11 --gen2 --entry-point=demo.RtfToHtml --runtime=java21 --region=europe-west10 --source=./target --trigger-http --allow-unauthenticated
 
 pause
 
