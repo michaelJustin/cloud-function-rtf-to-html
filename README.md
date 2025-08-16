@@ -26,6 +26,7 @@ The function reads the RTF file from the HTTP POST payload, converts it, and res
 * Complete Source Code and Maven project.
 * Deployment script included.
 * Demo HTML page included.
+* JPG and PNG embedded images (up to 128 KB each)
 * Serverless document conversion.
 
 # Quickstart
@@ -72,7 +73,7 @@ The cloud function is used in the demo currently located at https://www.scroogex
 
 # Configuration of the RTF to HTML Conversion
 
-The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L128-L150).
+The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L138-L173).
 
 # Deployment of the Google Cloud Function
 
@@ -86,7 +87,7 @@ and then lauch the deploy script file.
 
 # Limitations
 
-- the maximum allowed RTF size is 64 KB.
+- the maximum allowed RTF size is 1024 KB.
 - only HTTP requests from https://www.scroogexhtml.com are accepted. 
 
 # Further Reading
