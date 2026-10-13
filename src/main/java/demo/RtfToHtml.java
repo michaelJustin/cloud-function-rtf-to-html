@@ -26,6 +26,14 @@ import java.util.Locale;
 public class RtfToHtml implements HttpFunction {
 
     private static final int MAX_SIZE_BYTES = 1024 * 1024; // 1024 KB
+    private static final String CONTENT_SECURITY_POLICY =
+            "default-src 'none'; " +
+            "img-src 'self' data:; " +
+            "style-src 'unsafe-inline'; " +
+            "font-src 'self' data:; " +
+            "base-uri 'none'; " +
+            "frame-ancestors 'none'; " +
+            "form-action 'none';";
     private static final String DEFAULT_CSS = """
             body,p {
               margin: 0;
@@ -58,6 +66,7 @@ public class RtfToHtml implements HttpFunction {
 
         // CORS headers on EVERY response
         response.appendHeader("Vary", "Origin");
+        response.appendHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         if (ALLOWED_ORIGIN.equals(origin)) {
             response.appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         }
@@ -172,6 +181,7 @@ public class RtfToHtml implements HttpFunction {
     }
     
     private static void error(HttpResponse response, int status, String message) throws IOException {
+        response.appendHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         response.setStatusCode(status);
         response.setContentType("text/plain; charset=utf-8");
         response.getWriter().write(message);
