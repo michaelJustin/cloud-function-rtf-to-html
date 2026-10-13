@@ -92,7 +92,7 @@ and then lauch the deploy script file.
 
 # Further Reading
 
-- https://blog.habarisoft.com/scroogexhtml/rtf-to-html-in-the-cloud-deploying-a-java-conversion-api-on-google-cloud-run/
+- https://blog.habarisoft.com/2025/07/rtf-to-html-in-the-cloud/
 
 # Keywords
 - RTF to HTML conversion
