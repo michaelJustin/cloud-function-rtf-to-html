@@ -4,19 +4,19 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.scroogexhtml.ScroogeXHTML;
+import com.scroogexhtml.converter.ConversionException;
 import com.scroogexhtml.css.LengthUnit;
 import com.scroogexhtml.events.PostProcessEventObject;
 import com.scroogexhtml.events.PostProcessListener;
 import com.scroogexhtml.pictures.MemoryPictureAdapterDataURI;
 import jakarta.mail.internet.ContentType;
-import jakarta.mail.internet.MimeBodyPart;
-import jakarta.mail.internet.MimeMultipart;
-import jakarta.mail.util.ByteArrayDataSource;
-import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * This Java class implements a Google Cloud Function (HttpFunction) that converts an RTF document 
@@ -39,10 +39,12 @@ public class RtfToHtml implements HttpFunction {
               border-collapse: collapse;
             }
             """;
-    
+    private static final String ALLOWED_ORIGIN = "https://www.scroogexhtml.com";
+    private static final Logger log = LoggerFactory.getLogger(RtfToHtml.class);
+
     /**
      * Handles HTTP requests to convert an RTF document to HTML.
-     * Only requests coming from https://scroogexhtml.com are accepted.
+     * Only requests coming from https://www.scroogexhtml.com are accepted.
      * This is intentional to limit the usage to code hosted on the ScroogeXHTML
      * website.
      *
@@ -53,70 +55,89 @@ public class RtfToHtml implements HttpFunction {
     @SuppressWarnings("JavadocLinkAsPlainText")
     @Override
     public void service(HttpRequest request, HttpResponse response) throws Exception {
+        String origin = request.getFirstHeader("Origin").orElse(null);
 
-        // Only accept POST
-        if (!"POST".equalsIgnoreCase(request.getMethod())) {
-            response.setStatusCode(405); // Method Not Allowed
+        // CORS headers on EVERY response
+        response.appendHeader("Vary", "Origin");
+        if (ALLOWED_ORIGIN.equals(origin)) {
+            response.appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+        }
+
+        // Preflight
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            if (ALLOWED_ORIGIN.equals(origin)) {
+                response.appendHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+                response.appendHeader("Access-Control-Allow-Headers", "Content-Type");
+                response.appendHeader("Access-Control-Max-Age", "3600");
+                response.setStatusCode(204);
+            } else {
+                response.setStatusCode(403);
+            }
             return;
         }
 
-        // Only accept requests from scroogexhtml.com
-        String origin = request.getHeaders().get("origin") != null
-                ? request.getHeaders().get("origin").getFirst()
-                : null;
+        if (request.getContentLength() > MAX_SIZE_BYTES + 256) {
+            error(response,413, "File is too large");
+            return;
+        }
+        
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            response.setStatusCode(405);
+            return;
+        }
 
-        String referer = request.getHeaders().get("referer") != null
-                ? request.getHeaders().get("referer").getFirst()
-                : null;
-
-        boolean isValidOrigin = (origin != null && origin.equals("https://www.scroogexhtml.com")) ||
-                (referer != null && referer.startsWith("https://www.scroogexhtml.com"));
-
-        if (!isValidOrigin) {
-            response.setStatusCode(403, "Forbidden: Invalid origin");
+        if (!ALLOWED_ORIGIN.equals(origin)) {
+            error(response,403, "Forbidden: Invalid origin");
             return;
         }
         
         // Get content type and boundary
         String contentTypeHeader = request.getContentType().orElse("");
+        log.info("Content-Type: {}", contentTypeHeader);
+        log.info("Content-Length: {}", request.getContentLength());
+        
         if (!contentTypeHeader.startsWith("multipart/form-data")) {
-            response.setStatusCode(400, "Invalid content type");
+            error(response,400, "Invalid content type");
             return;
         }
 
         ContentType contentType = new ContentType(contentTypeHeader);
         String boundary = contentType.getParameter("boundary");
         if (boundary == null) {
-            response.setStatusCode(400, "Missing boundary in multipart/form-data");
+            error(response,400, "Missing boundary in multipart/form-data");
             return;
         }
 
         // Parse multipart content
-        byte[] bodyBytes = IOUtils.toByteArray(request.getInputStream());
-        ByteArrayDataSource dataSource = new ByteArrayDataSource(bodyBytes, contentTypeHeader);
-        MimeMultipart mimeMultipart = new MimeMultipart(dataSource);
-
         byte[] rtfContent = null;
         String fileName = null;
 
-        for (int i = 0; i < mimeMultipart.getCount(); i++) {
-            MimeBodyPart part = (MimeBodyPart) mimeMultipart.getBodyPart(i);
-            if (part.getFileName() != null && part.getFileName().endsWith(".rtf")) {
-                try (InputStream is = part.getInputStream()) {
-                    rtfContent = IOUtils.toByteArray(is);
-                    fileName = part.getFileName();
-                    break;
-                }
+        for (HttpRequest.HttpPart part : request.getParts().values()) {
+            String uploadedName = part.getFileName().orElse(null);
+
+            if (uploadedName == null ||
+                    !uploadedName.toLowerCase(Locale.ROOT).endsWith(".rtf")) {
+                continue;
             }
+
+            try (InputStream is = part.getInputStream()) {
+                rtfContent = readLimited(is);
+                fileName = uploadedName;
+            } catch (ConversionException e) {
+                error(response, 413, e.getMessage());
+                return;
+            }
+
+            break;
         }
 
         if (rtfContent == null) {
-            response.setStatusCode(400, "RTF file not found in request");
+            error(response,400, "RTF file not found in request");
             return;
         }
         
         if (rtfContent.length > MAX_SIZE_BYTES) {
-            response.setStatusCode(413, "File too large (max 1024 KB)");
+            error(response,413, "File too large (max 1024 KB)");
             return;
         }
 
@@ -126,13 +147,37 @@ public class RtfToHtml implements HttpFunction {
         // Return HTML content
         response.setStatusCode(200);
         response.appendHeader("Content-Type", "text/html; charset=utf-8");
-        response.appendHeader("Access-Control-Allow-Origin", "https://www.scroogexhtml.com"); 
-//        response.appendHeader("Access-Control-Allow-Origin", "*"); // Allow all origins for testing purposes
+        
         try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
             writer.write(htmlContent);
         }
     }
 
+    private static byte[] readLimited(InputStream input) throws IOException {
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int total = 0;
+        int count;
+
+        while ((count = input.read(buffer)) != -1) {
+            if (count > RtfToHtml.MAX_SIZE_BYTES - total) {
+                throw new ConversionException("Upload too large");
+            }
+
+            output.write(buffer, 0, count);
+            total += count;
+        }
+
+        return output.toByteArray();
+    }
+    
+    private static void error(HttpResponse response, int status, String message) throws IOException {
+        response.setStatusCode(status);
+        response.setContentType("text/plain; charset=utf-8");
+        response.getWriter().write(message);
+    }
+    
     private String convertRtfToHtml(byte[] rtfContent, String filename) {
      
         ScroogeXHTML converter = new ScroogeXHTML();
