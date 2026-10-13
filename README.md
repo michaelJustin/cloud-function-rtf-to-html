@@ -1,104 +1,203 @@
-![Java](https://img.shields.io/badge/language-Java-blue.svg)
-![Google Cloud](https://img.shields.io/badge/platform-Google%20Cloud-yellow.svg)
-![License](https://img.shields.io/github/license/michaelJustin/cloud-function-rtf-to-html.svg)
-![Last Commit](https://img.shields.io/github/last-commit/michaelJustin/cloud-function-rtf-to-html.svg)
-![Open Issues](https://img.shields.io/github/issues/michaelJustin/cloud-function-rtf-to-html.svg)
+# RTF to HTML Google Cloud Function
+
+[![Java 21](https://img.shields.io/badge/Java-21-blue.svg)](https://openjdk.org/projects/jdk/21/)
+[![Google Cloud Functions Gen 2](https://img.shields.io/badge/Google%20Cloud-Functions%20Gen%202-yellow.svg)](https://cloud.google.com/functions)
+[![ScroogeXHTML](https://img.shields.io/badge/ScroogeXHTML-11.3.0-green.svg)](https://www.scroogexhtml.com/)
+[![License](https://img.shields.io/github/license/michaelJustin/cloud-function-rtf-to-html.svg)](LICENSE)
+
+A high-performance Google Cloud Function (`HttpFunction`) in Java 21 that converts Rich Text Format (RTF) documents to clean, self-contained HTML using the [ScroogeXHTML RTF Converter](https://www.scroogexhtml.com/) library.
+
+---
 
 ## Table of Contents
 
-- [About Cloud-based RTF to HTML Conversion](#about-cloud-based-rtf-to-html-conversion)
-- [Features](#features)
-- [Quickstart](#quickstart)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration of the RTF to HTML Conversion](#configuration-of-the-rtf-to-html-conversion)
-- [Deployment of the Google Cloud Function](#deployment-of-the-google-cloud-function)
-- [Limitations](#limitations)
-  
-# About Cloud-based RTF to HTML Conversion
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture & Conversion Flow](#architecture--conversion-flow)
+- [Prerequisites](#prerequisites)
+- [Quickstart: Local Development](#quickstart-local-development)
+- [HTTP API Reference](#http-api-reference)
+- [Configuration](#configuration)
+- [Build and Deployment](#build-and-deployment)
+- [Limitations & Guardrails](#limitations--guardrails)
+- [Further Reading](#further-reading)
 
-The Java class RtfToHtml implements a Google Cloud Function (HttpFunction) that performs a RTF to HTML conversion using the [ScroogeXHTML RTF Converter](https://www.scroogexhtml.com/) library.
+---
 
-The function reads the RTF file from the HTTP POST payload, converts it, and responds with the HTML or an error message.
+## Overview
 
-# Features
+The `RtfToHtml` cloud function accepts RTF document uploads via HTTP `POST` multipart requests, converts the RTF document structure, formatting, tables, and images into HTML, and returns the resulting HTML document as a self-contained payload.
 
-* Complete Source Code and Maven project.
-* Deployment script included.
-* Demo HTML page included.
-* JPG and PNG embedded images (up to 128 KB each)
-* Serverless document conversion.
+It is designed to power serverless document conversion workflows with bounded memory consumption and origin-scoped security.
 
-# Quickstart
+---
 
-To lauch the local test server enter this Maven command:
+## Key Features
+
+- **Serverless RTF Conversion**: Fast, on-demand conversion without maintaining dedicated server infrastructure.
+- **Embedded Inline Images**: Converts embedded images (PNG, JPEG, etc. up to 256 KB) directly to inline Base64 Data URIs via `MemoryPictureAdapterDataURI`, producing self-contained HTML documents without external storage dependencies.
+- **Comprehensive Document Formatting**: Preserves hyperlinks, bookmarks, tables, borders, margins, indentation, font styling, and footnotes.
+- **Resource & Abuse Protection**: Enforces payload size limits (up to 1024 KB), bounded stream reading, and origin validation.
+- **Automated Metadata Attribution**: Appends document provenance and conversion metadata to the HTML output footer.
+- **Local Testing & Demos Included**: Pre-configured with the Google Cloud Functions Framework Maven plugin and sample HTML test clients.
+
+---
+
+## Architecture & Conversion Flow
+
+```
+[ Client Browser / Website ]
+           │
+           │ HTTP POST (multipart/form-data)
+           ▼
+[ Google Cloud Function: RtfToHtml ]
+     ├── 1. CORS & Origin Validation (https://www.scroogexhtml.com)
+     ├── 2. Size Check & Bounded Multipart Parsing (Max 1024 KB)
+     ├── 3. ScroogeXHTML Conversion Engine
+     │       ├── Apply CSS styles & typography
+     │       ├── Convert structure (tables, bookmarks, links)
+     │       └── Inline images as Data URIs
+     ├── 4. Post-processing: Append document footer & metadata
+     └── 5. Return HTTP 200 (text/html; charset=utf-8)
+```
+
+---
+
+## Prerequisites
+
+To build, test, and deploy this function locally, ensure you have:
+
+- **Java Development Kit (JDK)**: Version 21 or higher
+- **Apache Maven**: Version 3.8+
+- **Google Cloud CLI (`gcloud`)**: Required for Cloud Function deployment
+- **ScroogeXHTML Library**: Version 11.3.0 or compatible
+
+---
+
+## Quickstart: Local Development
+
+### 1. Start the Local Function Server
+
+Run the Cloud Functions Framework local invoker using Maven:
 
 ```console
 mvn function:run
 ```
 
-Output:
+Once running, the function will be available at `http://localhost:8080/`.
 
-```console
-...
-[INFO] jetty-9.4.51.v20230217; built: 2023-02-17T08:19:37.309Z; git: b45c405e4544384de066f814ed42ae3dceacdd49; jvm 21.0.7+6-LTS
-[INFO] Started o.e.j.s.ServletContextHandler@3caa4d85{/,null,AVAILABLE}
-[INFO] Started ServerConnector@c0013b8{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
-[INFO] Started @17722ms
-Juli 27, 2025 11:46:53 AM com.google.cloud.functions.invoker.runner.Invoker logServerInfo
-INFORMATION: Serving function...
-Juli 27, 2025 11:46:53 AM com.google.cloud.functions.invoker.runner.Invoker logServerInfo
-INFORMATION: Function: demo.RtfToHtml
-Juli 27, 2025 11:46:53 AM com.google.cloud.functions.invoker.runner.Invoker logServerInfo
-INFORMATION: URL: http://localhost:8080/
+### 2. Test with the Local Demo Client
+
+Open `demo-local.html` directly in your browser:
+- Select any `.rtf` file (under 1024 KB).
+- Click **Convert**.
+- The converted HTML will be rendered immediately within the preview frame.
+
+> **Note**: For local testing without strict origin restrictions, adjust or mock `ALLOWED_ORIGIN` in `RtfToHtml.java` if sending requests from custom browser origins or test tools.
+
+---
+
+## HTTP API Reference
+
+### Endpoint Details
+
+- **Method**: `POST` (or `OPTIONS` for CORS preflight)
+- **Path**: `/` (or deployed Cloud Function URL)
+- **Content-Type**: `multipart/form-data`
+
+### Request Headers
+
+| Header | Description | Required |
+| :--- | :--- | :--- |
+| `Origin` | Request origin (must match `https://www.scroogexhtml.com`) | Yes |
+| `Content-Type` | `multipart/form-data; boundary=...` | Yes |
+
+### Multipart Form Fields
+
+| Field Name | Type | Description |
+| :--- | :--- | :--- |
+| `file` (or any part) | File (`*.rtf`) | The RTF document to convert (maximum 1024 KB). |
+
+### HTTP Status Responses
+
+| Status Code | Description |
+| :--- | :--- |
+| `200 OK` | Document converted successfully. Returns `text/html; charset=utf-8`. |
+| `204 No Content` | CORS preflight request (`OPTIONS`) handled successfully. |
+| `400 Bad Request` | Invalid content type, missing multipart boundary, or no `.rtf` file found in request. |
+| `403 Forbidden` | Request origin header missing or does not match `ALLOWED_ORIGIN`. |
+| `405 Method Not Allowed` | HTTP method is not `POST` or `OPTIONS`. |
+| `413 Payload Too Large` | Uploaded file or payload exceeds the 1024 KB limit. |
+
+---
+
+## Configuration
+
+RTF-to-HTML conversion parameters are configured in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java):
+
+```java
+ScroogeXHTML converter = new ScroogeXHTML();
+converter.setAddOuterHTML(true);
+
+// Header & styling configuration
+converter.getHtmlHeadConfig().setStyleSheetInclude(DEFAULT_CSS);
+converter.getCharPropConvConfig().setFontSizeUnit(LengthUnit.POINT);
+
+// Structural elements
+converter.setConvertBookmarks(true);
+converter.setConvertHyperlinks(true);
+converter.setConvertTables(true);
+converter.setConvertFootnotes(true);
+converter.setConvertParagraphBorders(true);
+
+// Image handling: Base64 Data URI adapter
+converter.setConvertPictures(true);
+converter.setPictureAdapter(new MemoryPictureAdapterDataURI(256));
 ```
 
-Now you can open the demo.html in your browser and use it to upload an RTF to the local test server.
+---
 
-Note: in case ScroogeXHTML is not installed, you still may use the demo. Just replace the conversion by a hard-coded result.
+## Build and Deployment
 
-# Installation
+### 1. Package the Function
 
-The following tools are required:
-
-1. Google Cloud CLI   
-2. JDK 21
-3. Maven
-4. ScroogeXHTML 11.x
-   * in case ScroogeXHTML is not installed, you still may use the demo. Just replace the conversion by a hard-coded result.
-
-# Usage
-
-The cloud function is used in the demo currently located at https://www.scroogexhtml.com/index.html
-
-# Configuration of the RTF to HTML Conversion
-
-The converter uses a fixed configuration. See the `convertRtfToHtml` method in [`src/main/java/demo/RtfToHtml.java`](src/main/java/demo/RtfToHtml.java#L138-L173).
-
-# Deployment of the Google Cloud Function
-
-To deploy the Google Cloud function, build the project using 
+Build the shaded JAR file containing all runtime dependencies:
 
 ```console
 mvn clean package
 ```
 
-and then lauch the deploy script file.
+### 2. Deploy to Google Cloud Functions (Gen 2)
 
-# Limitations
+Deploy the packaged JAR using Google Cloud CLI or run the provided `deploy.cmd` script on Windows:
 
-- the maximum allowed RTF size is 1024 KB.
-- only HTTP requests from https://www.scroogexhtml.com are accepted. 
+```console
+gcloud functions deploy rtf-to-html-demo-11 \
+  --gen2 \
+  --entry-point=demo.RtfToHtml \
+  --runtime=java21 \
+  --region=europe-west10 \
+  --source=./target \
+  --trigger-http \
+  --allow-unauthenticated
+```
 
-# Further Reading
+### 3. Production Testing
 
-- https://blog.habarisoft.com/2025/07/rtf-to-html-in-the-cloud/
+Open `demo-prod.html` in your browser (configured to call the production Cloud Function endpoint) to verify live deployments.
 
-# Keywords
-- RTF to HTML conversion
-- Google Cloud Function
-- Java RTF Converter
-- ScroogeXHTML
-- Serverless document conversion
-- Cloud-based RTF to HTML
-  
+---
+
+## Limitations & Guardrails
+
+- **File Size Limit**: Maximum allowed RTF file size is **1024 KB (1 MB)** to ensure optimal serverless performance and predictable memory utilization.
+- **Allowed Origin**: Restricted by default to requests originating from `https://www.scroogexhtml.com`.
+- **Image Size Limit**: Individual embedded images are bounded to 256 KB when generating Data URIs.
+
+---
+
+## Further Reading
+
+- [ScroogeXHTML Official Documentation](https://www.scroogexhtml.com/)
+- [Google Cloud Functions Java Framework](https://cloud.google.com/functions/docs/create-deploy-http-java)
+- [RTF to HTML in the Cloud (Habari Blog)](https://blog.habarisoft.com/2025/07/rtf-to-html-in-the-cloud/)
