@@ -4,7 +4,6 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.scroogexhtml.ScroogeXHTML;
-import com.scroogexhtml.converter.ConversionException;
 import com.scroogexhtml.css.LengthUnit;
 import com.scroogexhtml.events.PostProcessEventObject;
 import com.scroogexhtml.events.PostProcessListener;
@@ -123,7 +122,7 @@ public class RtfToHtml implements HttpFunction {
             try (InputStream is = part.getInputStream()) {
                 rtfContent = readLimited(is);
                 fileName = uploadedName;
-            } catch (ConversionException e) {
+            } catch (IOException e) {
                 error(response, 413, e.getMessage());
                 return;
             }
@@ -162,7 +161,7 @@ public class RtfToHtml implements HttpFunction {
 
         while ((count = input.read(buffer)) != -1) {
             if (count > RtfToHtml.MAX_SIZE_BYTES - total) {
-                throw new ConversionException("Upload too large");
+                throw new IOException("Upload too large");
             }
 
             output.write(buffer, 0, count);
@@ -204,7 +203,6 @@ public class RtfToHtml implements HttpFunction {
         converter.setConvertEmptyParagraphs(true);
         converter.setConvertFootnotes(true);
         converter.setConvertHyperlinks(true);
-        converter.setConvertPictures(true);
         converter.setConvertTables(true);
         
         // pictures
