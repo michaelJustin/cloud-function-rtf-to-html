@@ -64,7 +64,7 @@ public class RtfToHtml implements HttpFunction {
     public void service(HttpRequest request, HttpResponse response) throws Exception {
         String origin = request.getFirstHeader("Origin").orElse(null);
 
-        // CORS headers on EVERY response
+        // CORS and CSP headers on EVERY response (including errors)
         response.appendHeader("Vary", "Origin");
         response.appendHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         if (ALLOWED_ORIGIN.equals(origin)) {
@@ -181,7 +181,6 @@ public class RtfToHtml implements HttpFunction {
     }
     
     private static void error(HttpResponse response, int status, String message) throws IOException {
-        response.appendHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         response.setStatusCode(status);
         response.setContentType("text/plain; charset=utf-8");
         response.getWriter().write(message);
