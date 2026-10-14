@@ -109,7 +109,6 @@ public class RtfToHtml implements HttpFunction {
         
         // Get content type
         String contentTypeHeader = request.getContentType().orElse("");
-        log.info("Content-Type: {}", contentTypeHeader);
         log.info("Content-Length: {}", request.getContentLength());
         
         if (!contentTypeHeader.startsWith("multipart/form-data")) {
