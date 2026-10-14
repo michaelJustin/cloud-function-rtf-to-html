@@ -1,3 +1,8 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 package demo;
 
 import com.google.cloud.functions.HttpFunction;
@@ -18,14 +23,17 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * This Java class implements a Google Cloud Function (HttpFunction) that converts an RTF document 
- * (send as HTTP POST payload) to HTML using the ScroogeXHTML library. 
- * The function reads an RTF file from a query parameter URL, converts it, and responds with the 
- * HTML or usage instructions.
+ * This Java class implements a Google Cloud Function (HttpFunction) that converts an RTF document
+ * to HTML using the ScroogeXHTML library.
+ * The RTF file is sent as a {@code multipart/form-data} HTTP POST upload; the function responds
+ * with the converted HTML document, or with a plain-text error message.
  */
 public class RtfToHtml implements HttpFunction {
 
     private static final int MAX_SIZE_BYTES = 1024 * 1024; // 1024 KB
+    // Allowance for the multipart framing around the file (boundaries, part headers
+    // including the file name); the file itself is limited by readLimited()
+    private static final int MAX_MULTIPART_OVERHEAD_BYTES = 16 * 1024;
     private static final String CONTENT_SECURITY_POLICY =
             "default-src 'none'; " +
             "img-src 'self' data:; " +
@@ -55,9 +63,9 @@ public class RtfToHtml implements HttpFunction {
      * This is intentional to limit the usage to code hosted on the ScroogeXHTML
      * website.
      *
-     * @param request  The HTTP request containing query parameters.
-     * @param response The HTTP response to write the HTML output or usage instructions.
-     * @throws IOException If an I/O error occurs while reading the RTF file or writing the response.
+     * @param request  The HTTP request with the RTF file as a multipart/form-data upload.
+     * @param response The HTTP response to write the HTML output or an error message to.
+     * @throws Exception If writing the response or converting the document fails.
      */
     @SuppressWarnings("JavadocLinkAsPlainText")
     @Override
@@ -84,7 +92,7 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
 
-        if (request.getContentLength() > MAX_SIZE_BYTES + 256) {
+        if (request.getContentLength() > MAX_SIZE_BYTES + MAX_MULTIPART_OVERHEAD_BYTES) {
             error(response,413, "File is too large");
             return;
         }
@@ -134,8 +142,12 @@ public class RtfToHtml implements HttpFunction {
             try (InputStream is = part.getInputStream()) {
                 rtfContent = readLimited(is);
                 fileName = uploadedName;
+            } catch (UploadTooLargeException e) {
+                error(response, 413, "File too large (max 1024 KB)");
+                return;
             } catch (IOException e) {
-                error(response, 413, e.getMessage());
+                log.warn("Could not read uploaded file", e);
+                error(response, 400, "Could not read uploaded file");
                 return;
             }
 
@@ -144,11 +156,6 @@ public class RtfToHtml implements HttpFunction {
 
         if (rtfContent == null) {
             error(response,400, "RTF file not found in request");
-            return;
-        }
-        
-        if (rtfContent.length > MAX_SIZE_BYTES) {
-            error(response,413, "File too large (max 1024 KB)");
             return;
         }
 
@@ -173,7 +180,7 @@ public class RtfToHtml implements HttpFunction {
 
         while ((count = input.read(buffer)) != -1) {
             if (count > RtfToHtml.MAX_SIZE_BYTES - total) {
-                throw new IOException("Upload too large");
+                throw new UploadTooLargeException();
             }
 
             output.write(buffer, 0, count);
@@ -226,6 +233,12 @@ public class RtfToHtml implements HttpFunction {
         converter.addPostProcessListener(new MyPostProcessListener(filename, rtfContent.length));
         
         return converter.convert(new ByteArrayInputStream(rtfContent));
+    }
+
+    private static class UploadTooLargeException extends IOException {
+        UploadTooLargeException() {
+            super("Upload too large");
+        }
     }
 
     private static class MyPostProcessListener implements PostProcessListener {
