@@ -26,6 +26,14 @@ import java.util.Map;
 public class RtfToHtml implements HttpFunction {
 
     private static final int MAX_SIZE_BYTES = 1024 * 1024; // 1024 KB
+    private static final String CONTENT_SECURITY_POLICY =
+            "default-src 'none'; " +
+            "img-src 'self' data:; " +
+            "style-src 'unsafe-inline'; " +
+            "font-src 'self' data:; " +
+            "base-uri 'none'; " +
+            "frame-ancestors 'none'; " +
+            "form-action 'none';";
     private static final String DEFAULT_CSS = """
             body,p {
               margin: 0;
@@ -56,8 +64,9 @@ public class RtfToHtml implements HttpFunction {
     public void service(HttpRequest request, HttpResponse response) throws Exception {
         String origin = request.getFirstHeader("Origin").orElse(null);
 
-        // CORS headers on EVERY response
+        // CORS and CSP headers on EVERY response (including errors)
         response.appendHeader("Vary", "Origin");
+        response.appendHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         if (ALLOWED_ORIGIN.equals(origin)) {
             response.appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         }
