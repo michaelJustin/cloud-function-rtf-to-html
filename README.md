@@ -73,7 +73,8 @@ gcloud functions deploy rtf-to-html-demo-11 \
   --entry-point=demo.RtfToHtml \
   --source=./target \
   --trigger-http \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --max-instances=3
 ```
 
 [`demo-prod.html`](demo-prod.html) calls the deployed endpoint.
