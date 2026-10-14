@@ -16,7 +16,7 @@ The `RtfToHtml` cloud function is a Google Cloud Function (`HttpFunction`) desig
 ### 2. Payload Validation & Resource Guardrails
 - **Early Size Check**: Rejects payloads exceeding the maximum limit (`request.getContentLength() > MAX_SIZE_BYTES + 256`) with `413 File is too large` before parsing multipart bodies.
 - **Bounded Stream Reading**: Uses `readLimited(InputStream)` to enforce a strict 1 MB (`1024 * 1024` bytes) cap during stream reading to protect serverless memory from unbounded streams.
-- **Multipart Parsing**: Validates `multipart/form-data` content headers, parses boundaries via `jakarta.mail.internet.ContentType`, and extracts files ending in `.rtf`.
+- **Multipart Parsing**: Validates `multipart/form-data` content headers, parses the body with the Functions Framework's `HttpRequest.getParts()` (malformed bodies are rejected with `400`), and extracts files ending in `.rtf`.
 
 ### 3. RTF to HTML Conversion (`ScroogeXHTML`)
 - **Document Structure Preservation**: Retains bookmarks, hyperlinks, tables, borders, indentation, empty paragraphs, and footnotes.

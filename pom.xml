@@ -35,13 +35,6 @@
             <version>11.3.0</version>
         </dependency>
 
-        <!-- Jakarta Mail multipart parser (for reading form data) -->
-        <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <version>2.0.2</version> <!-- Or latest stable version -->
-        </dependency>
-        
         <!-- SLF4J for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -109,15 +102,6 @@
                                         <resource>.txt</resource>
                                         <resource>.module-info</resource>
                                     </resources>
-                                </transformer>
-                                <!-- jakarta.mail and jakarta.activation both ship these; keep both texts -->
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/LICENSE.md</resource>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/NOTICE.md</resource>
                                 </transformer>
                             </transformers>
                         </configuration>

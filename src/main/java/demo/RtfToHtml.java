@@ -8,7 +8,6 @@ import com.scroogexhtml.css.LengthUnit;
 import com.scroogexhtml.events.PostProcessEventObject;
 import com.scroogexhtml.events.PostProcessListener;
 import com.scroogexhtml.pictures.MemoryPictureAdapterDataURI;
-import jakarta.mail.internet.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -16,6 +15,7 @@ import org.w3c.dom.Document;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * This Java class implements a Google Cloud Function (HttpFunction) that converts an RTF document 
@@ -90,7 +90,7 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
         
-        // Get content type and boundary
+        // Get content type
         String contentTypeHeader = request.getContentType().orElse("");
         log.info("Content-Type: {}", contentTypeHeader);
         log.info("Content-Length: {}", request.getContentLength());
@@ -100,18 +100,21 @@ public class RtfToHtml implements HttpFunction {
             return;
         }
 
-        ContentType contentType = new ContentType(contentTypeHeader);
-        String boundary = contentType.getParameter("boundary");
-        if (boundary == null) {
-            error(response,400, "Missing boundary in multipart/form-data");
+        // Parse multipart content (the framework throws unchecked exceptions
+        // for a missing or mismatched boundary and for truncated bodies)
+        Map<String, HttpRequest.HttpPart> parts;
+        try {
+            parts = request.getParts();
+        } catch (RuntimeException e) {
+            log.warn("Invalid multipart/form-data body", e);
+            error(response, 400, "Invalid multipart/form-data body");
             return;
         }
 
-        // Parse multipart content
         byte[] rtfContent = null;
         String fileName = null;
 
-        for (HttpRequest.HttpPart part : request.getParts().values()) {
+        for (HttpRequest.HttpPart part : parts.values()) {
             String uploadedName = part.getFileName().orElse(null);
 
             if (uploadedName == null ||
