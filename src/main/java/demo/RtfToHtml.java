@@ -48,7 +48,6 @@ public class RtfToHtml implements HttpFunction {
             }
             td {
               vertical-align: top;
-              border: 1px solid #D3D3D3;
             }
             table {
               border-collapse: collapse;
@@ -222,7 +221,10 @@ public class RtfToHtml implements HttpFunction {
         converter.setConvertFootnotes(true);
         converter.setConvertHyperlinks(true);
         converter.setConvertTables(true);
-        
+
+        // Tables (experimental: cell borders from the RTF document)
+        converter.getTablePropConvConfig().setConvertCellStyles(true);
+
         // pictures
         converter.setConvertPictures(true);
         MemoryPictureAdapterDataURI pa = new MemoryPictureAdapterDataURI(256);

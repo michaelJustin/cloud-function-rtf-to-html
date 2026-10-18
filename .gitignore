@@ -26,3 +26,4 @@ replay_pid*
 
 # Claude Code personal settings
 .claude/settings.local.json
+.idea/

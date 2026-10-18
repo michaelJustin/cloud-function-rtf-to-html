@@ -2,7 +2,7 @@
 
 [![Java 21](https://img.shields.io/badge/Java-21-blue.svg)](https://openjdk.org/projects/jdk/21/)
 [![Google Cloud Functions Gen 2](https://img.shields.io/badge/Google%20Cloud-Functions%20Gen%202-yellow.svg)](https://cloud.google.com/functions)
-[![ScroogeXHTML 11.3.0](https://img.shields.io/badge/ScroogeXHTML-11.3.0-green.svg)](https://www.scroogexhtml.com/)
+[![ScroogeXHTML 11.4.0-SNAPSHOT](https://img.shields.io/badge/ScroogeXHTML-11.4.0--SNAPSHOT-green.svg)](https://www.scroogexhtml.com/)
 [![License: MPL 2.0](https://img.shields.io/github/license/michaelJustin/cloud-function-rtf-to-html.svg)](LICENSE)
 
 RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded RTF documents into self-contained HTML, powered by the [ScroogeXHTML](https://www.scroogexhtml.com/) RTF converter library.
@@ -11,7 +11,7 @@ RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded R
 
 ## Features
 
-- **Rich formatting** — fonts, paragraph indents and borders, tables, hyperlinks, bookmarks and footnotes.
+- **Rich formatting** — fonts, paragraph indents and borders, tables with cell borders, hyperlinks, bookmarks and footnotes.
 - **Self-contained output** — JPG, PNG and BMP pictures up to 256 KB are embedded as Base64 data URIs.
 - **Safe by default** — link targets are allow-list filtered by the converter, every response carries a restrictive `Content-Security-Policy`, and the demo pages show the result in a sandboxed iframe.
 - **Bounded resources** — uploads are limited to 1 MB and read with a hard cap.
@@ -21,7 +21,7 @@ RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded R
 
 - JDK 21+ and Maven 3.8+
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`) for deployment
-- ScroogeXHTML 11.3.0 and ScroogeXHTML-Pictures 11.3.0 in your Maven repository — see [scroogexhtml.com](https://www.scroogexhtml.com/)
+- ScroogeXHTML 11.4.0-SNAPSHOT and ScroogeXHTML-Pictures 11.4.0-SNAPSHOT in your Maven repository — see [scroogexhtml.com](https://www.scroogexhtml.com/)
 
 ## Quick start
 
@@ -91,8 +91,9 @@ All settings are constants and converter options in [`RtfToHtml.java`](src/main/
 | `MAX_SIZE_BYTES` | 1 MB |
 | `CONTENT_SECURITY_POLICY` | `default-src 'none'`, inline styles and `data:` images allowed |
 | Embedded picture limit | 256 KB (`MemoryPictureAdapterDataURI`) |
+| Table cell borders | Taken from the RTF document (`setConvertCellStyles`, experimental) |
 
-The converter options (tables, footnotes, hyperlinks, CSS, font size unit, …) are documented at [scroogexhtml.com](https://www.scroogexhtml.com/).
+The experimental cell-style option logs a warning for every conversion. The converter options (tables, footnotes, hyperlinks, CSS, font size unit, …) are documented at [scroogexhtml.com](https://www.scroogexhtml.com/).
 
 ## Learn more
 
