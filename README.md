@@ -2,7 +2,7 @@
 
 [![Java 21](https://img.shields.io/badge/Java-21-blue.svg)](https://openjdk.org/projects/jdk/21/)
 [![Google Cloud Functions Gen 2](https://img.shields.io/badge/Google%20Cloud-Functions%20Gen%202-yellow.svg)](https://cloud.google.com/functions)
-[![ScroogeXHTML 11.4.0-SNAPSHOT](https://img.shields.io/badge/ScroogeXHTML-11.4.0--SNAPSHOT-green.svg)](https://www.scroogexhtml.com/)
+[![ScroogeXHTML 11.4.0](https://img.shields.io/badge/ScroogeXHTML-11.4.0-green.svg)](https://www.scroogexhtml.com/)
 [![License: MPL 2.0](https://img.shields.io/github/license/michaelJustin/cloud-function-rtf-to-html.svg)](LICENSE)
 
 RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded RTF documents into self-contained HTML, powered by the [ScroogeXHTML](https://www.scroogexhtml.com/) RTF converter library.
@@ -21,7 +21,7 @@ RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded R
 
 - JDK 21+ and Maven 3.8+
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`) for deployment
-- ScroogeXHTML 11.4.0-SNAPSHOT and ScroogeXHTML-Pictures 11.4.0-SNAPSHOT in your Maven repository — see [scroogexhtml.com](https://www.scroogexhtml.com/)
+- ScroogeXHTML 11.4.0 and ScroogeXHTML-Pictures 11.4.0 in your Maven repository — see [scroogexhtml.com](https://www.scroogexhtml.com/)
 
 ## Quick start
 
