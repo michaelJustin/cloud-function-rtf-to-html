@@ -218,7 +218,6 @@ public class RtfToHtml implements HttpFunction {
         // Special options
         converter.setConvertBookmarks(true);
         converter.setConvertEmptyParagraphs(true);
-        converter.setConvertFootnotes(true);
         converter.setConvertHyperlinks(true);
         converter.setConvertTables(true);
 

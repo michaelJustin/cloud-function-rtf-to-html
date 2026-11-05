@@ -19,7 +19,7 @@ The `RtfToHtml` cloud function is a Google Cloud Function (`HttpFunction`) desig
 - **Multipart Parsing**: Validates `multipart/form-data` content headers, parses the body with the Functions Framework's `HttpRequest.getParts()` (malformed bodies are rejected with `400`), and extracts files ending in `.rtf`.
 
 ### 3. RTF to HTML Conversion (`ScroogeXHTML`)
-- **Document Structure Preservation**: Retains bookmarks, hyperlinks, tables, borders, indentation, empty paragraphs, and footnotes.
+- **Document Structure Preservation**: Retains bookmarks, hyperlinks, tables, borders, indentation and empty paragraphs.
 - **Styling Configuration**: Uses standard typography defaults (font sizes in points) and embeds default stylesheet rules (`DEFAULT_CSS`).
 - **Inline Image Handling**: Uses `MemoryPictureAdapterDataURI(256)` to embed image assets directly as base64 Data URIs, producing fully self-contained HTML without external storage dependencies.
 - **Post-Processing & Provenance**: Implements `MyPostProcessListener` to append a `<footer>` containing original filename, size in KB, and service attribution to the HTML `<body>`.

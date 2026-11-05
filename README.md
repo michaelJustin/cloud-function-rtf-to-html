@@ -11,7 +11,7 @@ RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded R
 
 ## Features
 
-- **Rich formatting** — fonts, paragraph indents and borders, tables with cell borders, hyperlinks, bookmarks and footnotes.
+- **Rich formatting** — fonts, paragraph indents and borders, tables with cell borders, hyperlinks and bookmarks.
 - **Self-contained output** — JPG, PNG and BMP pictures up to 256 KB are embedded as Base64 data URIs.
 - **Safe by default** — link targets are allow-list filtered by the converter, every response carries a restrictive `Content-Security-Policy`, and the demo pages show the result in a sandboxed iframe.
 - **Bounded resources** — uploads are limited to 1 MB and read with a hard cap.
@@ -93,7 +93,7 @@ All settings are constants and converter options in [`RtfToHtml.java`](src/main/
 | Embedded picture limit | 256 KB (`MemoryPictureAdapterDataURI`) |
 | Table cell borders | Taken from the RTF document (`setConvertCellStyles`) |
 
-The converter options (tables, footnotes, hyperlinks, CSS, font size unit, …) are documented at [scroogexhtml.com](https://www.scroogexhtml.com/).
+The converter options (tables, hyperlinks, CSS, font size unit, …) are documented at [scroogexhtml.com](https://www.scroogexhtml.com/).
 
 ## Learn more
 
