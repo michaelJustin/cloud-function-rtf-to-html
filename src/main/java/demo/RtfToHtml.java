@@ -222,7 +222,7 @@ public class RtfToHtml implements HttpFunction {
         converter.setConvertHyperlinks(true);
         converter.setConvertTables(true);
 
-        // Tables (experimental: cell borders from the RTF document)
+        // Tables (cell borders from the RTF document)
         converter.getTablePropConvConfig().setConvertCellStyles(true);
 
         // pictures
