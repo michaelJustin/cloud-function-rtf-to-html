@@ -13,6 +13,7 @@ RTF in, clean HTML out: a Java 21 Google Cloud Function that converts uploaded R
 
 - **Rich formatting** — fonts, paragraph indents and borders, tables with cell borders, hyperlinks and bookmarks.
 - **Self-contained output** — JPG, PNG and BMP pictures up to 256 KB are embedded as Base64 data URIs.
+- **Validated output** — each document is checked locally with the [Nu Html Checker](https://validator.github.io/validator/); a footer shows the converter version, the conversion time and either the HTML5 logo or the number of validation errors.
 - **Safe by default** — link targets are allow-list filtered by the converter, every response carries a restrictive `Content-Security-Policy`, and the demo pages show the result in a sandboxed iframe.
 - **Bounded resources** — uploads are limited to 1 MB and read with a hard cap.
 - **Origin-restricted** — only requests from `https://www.scroogexhtml.com` are accepted (CORS).

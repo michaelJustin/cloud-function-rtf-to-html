@@ -22,7 +22,7 @@ The `RtfToHtml` cloud function is a Google Cloud Function (`HttpFunction`) desig
 - **Document Structure Preservation**: Retains bookmarks, hyperlinks, tables, borders, indentation and empty paragraphs.
 - **Styling Configuration**: Uses standard typography defaults (font sizes in points) and embeds default stylesheet rules (`DEFAULT_CSS`).
 - **Inline Image Handling**: Uses `MemoryPictureAdapterDataURI(256)` to embed image assets directly as base64 Data URIs, producing fully self-contained HTML without external storage dependencies.
-- **Post-Processing & Provenance**: Implements `MyPostProcessListener` to append a `<footer>` containing original filename, size in KB, and service attribution to the HTML `<body>`.
+- **Validation & Footer**: Measures the conversion time, validates the converted document locally with the Nu Html Checker (`HtmlValidator`), then appends a `<footer>` (`DemoFooter`) with the converter version, the conversion time in ms, the original filename and size in KB, and either the HTML5 logo (no errors) or the error count. The footer font (IBM Plex Sans, OFL 1.1) and the logo are embedded as data URIs.
 
 ### 4. Deterministic HTTP Error Signaling
 - `200 OK`: Successful conversion returning `text/html; charset=utf-8`.

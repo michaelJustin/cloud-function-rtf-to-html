@@ -10,17 +10,16 @@ import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.scroogexhtml.ScroogeXHTML;
 import com.scroogexhtml.css.LengthUnit;
-import com.scroogexhtml.events.PostProcessEventObject;
-import com.scroogexhtml.events.PostProcessListener;
 import com.scroogexhtml.pictures.MemoryPictureAdapterDataURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
+import java.util.OptionalInt;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This Java class implements a Google Cloud Function (HttpFunction) that converts an RTF document
@@ -55,6 +54,14 @@ public class RtfToHtml implements HttpFunction {
             """;
     private static final String ALLOWED_ORIGIN = "https://www.scroogexhtml.com";
     private static final Logger log = LoggerFactory.getLogger(RtfToHtml.class);
+
+    static {
+        // The HTML validator brings Saxon-HE, which registers itself as the JAXP
+        // TransformerFactory, but rejects the secure-processing properties ScroogeXHTML
+        // sets. Keep the JDK's built-in factory for JAXP (vnu calls Saxon directly).
+        System.setProperty("javax.xml.transform.TransformerFactory",
+                "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl");
+    }
 
     /**
      * Handles HTTP requests to convert an RTF document to HTML.
@@ -203,7 +210,7 @@ public class RtfToHtml implements HttpFunction {
         // Head options
         converter.getHtmlHeadConfig().setMetaAuthor("ScroogeXHTML RTF Converter - https://www.scroogexhtml.com");
         converter.getHtmlHeadConfig().setMetaDescription("Conversion of '%s'".formatted(filename));
-        converter.getHtmlHeadConfig().setStyleSheetInclude(DEFAULT_CSS);
+        converter.getHtmlHeadConfig().setStyleSheetInclude(DEFAULT_CSS + DemoFooter.CSS);
         converter.getHtmlHeadConfig().setIncludeDefaultFontStyle(true);
         converter.setDefaultLanguage("");
 
@@ -228,11 +235,20 @@ public class RtfToHtml implements HttpFunction {
         converter.setConvertPictures(true);
         MemoryPictureAdapterDataURI pa = new MemoryPictureAdapterDataURI(256);
         converter.setPictureAdapter(pa);
-        
-        // footer
-        converter.addPostProcessListener(new MyPostProcessListener(filename, rtfContent.length));
-        
-        return converter.convert(new ByteArrayInputStream(rtfContent));
+
+        long start = System.nanoTime();
+        String html = converter.convert(new ByteArrayInputStream(rtfContent));
+        long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        // validate the converter output, then append the footer (which is not validated)
+        long validationStart = System.nanoTime();
+        OptionalInt errors = HtmlValidator.countErrors(html);
+        log.info("Converted in {} ms, validated in {} ms, validation errors: {}", millis,
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - validationStart),
+                errors.isPresent() ? errors.getAsInt() : "n/a");
+
+        return DemoFooter.insert(html,
+                DemoFooter.html(converter.getVersion(), millis, filename, rtfContent.length, errors));
     }
 
     private static class UploadTooLargeException extends IOException {
@@ -241,24 +257,4 @@ public class RtfToHtml implements HttpFunction {
         }
     }
 
-    private static class MyPostProcessListener implements PostProcessListener {
-        private final String filename;
-        private final int length;
-
-        public MyPostProcessListener(String filename, int length) {
-            this.filename = filename;
-            this.length = length;
-        }
-
-        @Override
-        public void postProcess(PostProcessEventObject eventObject) {
-            Document doc = eventObject.getDocument();
-            // Add a footer with the filename
-            doc.getElementsByTagName("body").item(0).appendChild(
-                    doc.createElement("footer")
-            ).setTextContent(
-                    "Converted from: %s (size: %d KB) - Powered by ScroogeXHTML - https://www.scroogexhtml.com"
-                            .formatted(filename, length / 1024));
-        }
-    }
 }
