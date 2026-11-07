@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -33,6 +34,9 @@ public class RtfToHtml implements HttpFunction {
     // Allowance for the multipart framing around the file (boundaries, part headers
     // including the file name); the file itself is limited by readLimited()
     private static final int MAX_MULTIPART_OVERHEAD_BYTES = 16 * 1024;
+    // files below this size are converted MEDIAN_RUNS times, and the median time is shown
+    private static final int MEDIAN_MAX_BYTES = 128 * 1024; // 128 KB
+    private static final int MEDIAN_RUNS = 5;
     private static final String CONTENT_SECURITY_POLICY =
             "default-src 'none'; " +
             "img-src 'self' data:; " +
@@ -202,7 +206,33 @@ public class RtfToHtml implements HttpFunction {
     }
     
     private String convertRtfToHtml(byte[] rtfContent, String filename) {
-     
+        // small files convert in a few ms, where a single measurement is mostly noise
+        // (JIT, GC): convert them several times and report the median
+        int runs = rtfContent.length < MEDIAN_MAX_BYTES ? MEDIAN_RUNS : 1;
+        long[] nanos = new long[runs];
+        String html = null;
+        ScroogeXHTML converter = null;
+        for (int i = 0; i < runs; i++) {
+            converter = createConverter(filename); // setup is not timed
+            long start = System.nanoTime();
+            html = converter.convert(new ByteArrayInputStream(rtfContent));
+            nanos[i] = System.nanoTime() - start;
+        }
+        Arrays.sort(nanos);
+        long millis = TimeUnit.NANOSECONDS.toMillis(nanos[runs / 2]);
+
+        // validate the converter output, then append the footer (which is not validated)
+        long validationStart = System.nanoTime();
+        OptionalInt errors = HtmlValidator.countErrors(html);
+        log.info("Converted in {} ms (median of {}), validated in {} ms, validation errors: {}",
+                millis, runs, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - validationStart),
+                errors.isPresent() ? errors.getAsInt() : "n/a");
+
+        return DemoFooter.insert(html, DemoFooter.html(converter.getVersion(), millis, runs,
+                filename, rtfContent.length, errors));
+    }
+
+    private static ScroogeXHTML createConverter(String filename) {
         ScroogeXHTML converter = new ScroogeXHTML();
 
         converter.setAddOuterHTML(true);
@@ -236,19 +266,7 @@ public class RtfToHtml implements HttpFunction {
         MemoryPictureAdapterDataURI pa = new MemoryPictureAdapterDataURI(256);
         converter.setPictureAdapter(pa);
 
-        long start = System.nanoTime();
-        String html = converter.convert(new ByteArrayInputStream(rtfContent));
-        long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-
-        // validate the converter output, then append the footer (which is not validated)
-        long validationStart = System.nanoTime();
-        OptionalInt errors = HtmlValidator.countErrors(html);
-        log.info("Converted in {} ms, validated in {} ms, validation errors: {}", millis,
-                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - validationStart),
-                errors.isPresent() ? errors.getAsInt() : "n/a");
-
-        return DemoFooter.insert(html,
-                DemoFooter.html(converter.getVersion(), millis, filename, rtfContent.length, errors));
+        return converter;
     }
 
     private static class UploadTooLargeException extends IOException {

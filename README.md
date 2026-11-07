@@ -75,12 +75,16 @@ gcloud functions deploy rtf-to-html-demo-11 \
   --source=./target \
   --trigger-http \
   --allow-unauthenticated \
-  --max-instances=3
+  --max-instances=3 \
+  --cpu=1 \
+  --memory=512Mi
 ```
 
 [`demo-prod.html`](demo-prod.html) calls the deployed endpoint.
 
-Files over 1 MB are rejected before conversion. A file close to that limit can still take longer to convert than the default 60 s request timeout (seen with 1 MB of unformatted text on the default instance size); increase `--cpu` or `--timeout` if you need more headroom.
+One full vCPU keeps the response time reasonable: on the default instance size (a fraction of a vCPU), a 35 KB document took about 3.5 s, mostly for HTML validation. Files below 128 KB are converted five times, and the footer shows the median conversion time.
+
+Files over 1 MB are rejected before conversion. A file close to that limit can still take longer to convert than the default 60 s request timeout (seen with 1 MB of unformatted text on the default instance size); increase `--timeout` if you need more headroom.
 
 ## Configuration
 

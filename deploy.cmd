@@ -1,6 +1,6 @@
 del /q /s target\original*
 
-call gcloud functions deploy rtf-to-html-demo-11 --gen2 --entry-point=demo.RtfToHtml --runtime=java21 --region=europe-west10 --source=./target --trigger-http --allow-unauthenticated --max-instances=3
+call gcloud functions deploy rtf-to-html-demo-11 --gen2 --entry-point=demo.RtfToHtml --runtime=java21 --region=europe-west10 --source=./target --trigger-http --allow-unauthenticated --max-instances=3 --cpu=1 --memory=512Mi
 
 pause
 

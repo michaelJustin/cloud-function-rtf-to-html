@@ -81,17 +81,22 @@ final class DemoFooter {
      * Builds the footer element.
      *
      * @param version          the converter version
-     * @param conversionMillis the conversion time in milliseconds
+     * @param conversionMillis the conversion time in milliseconds (the median if runs &gt; 1)
+     * @param runs             the number of conversion runs
      * @param fileName         the name of the RTF file
      * @param sizeBytes        the size of the RTF file
      * @param errors           the number of validation errors, empty if validation failed
      * @return the footer HTML
      */
-    static String html(String version, long conversionMillis, String fileName, int sizeBytes,
-                       OptionalInt errors) {
+    static String html(String version, long conversionMillis, int runs, String fileName,
+                       int sizeBytes, OptionalInt errors) {
         StringBuilder sb = new StringBuilder("<footer class=\"sx-demo-footer\">");
         sb.append("<span>Converted by <strong>ScroogeXHTML ").append(escape(version))
-                .append("</strong> in ").append(conversionMillis).append(" ms</span>");
+                .append("</strong> in ").append(conversionMillis).append(" ms");
+        if (runs > 1) {
+            sb.append(" (median of ").append(runs).append(" runs)");
+        }
+        sb.append("</span>");
         sb.append("<span>").append(escape(fileName))
                 .append(" (").append(sizeBytes / 1024).append(" KB)</span>");
         if (errors.isPresent()) {
